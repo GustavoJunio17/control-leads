@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  waha:
+    image: devlikeapro/waha:latest
+    container_name: waha_odontocrm
+    ports:
+      - "3002:3000"
+    environment:
+      - WHATSAPP_DEFAULT_ENGINE=PLAYWRIGHT
+      - WAHA_LOG_LEVEL=info
+      - WAHA_ENABLE_SWAGGER=true
+      - WAHA_DASHBOARD_PASSWORD=30e724584f1a4382ac9a23f5e1262ed3
+      - WAHA_API_KEY=30e724584f1a4382ac9a23f5e1262ed3
+      - WAHA_PRINT_QR=true
+      - WAHA_START_SESSIONS=default
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    shm_size: '2gb'
