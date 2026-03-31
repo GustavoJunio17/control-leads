@@ -36,10 +36,49 @@ export async function updateSession(request: NextRequest) {
                         request.nextUrl.pathname.startsWith('/register') ||
                         request.nextUrl.pathname.startsWith('/api/')
 
+  // Closed SaaS: Redirect register to home
+  if (request.nextUrl.pathname.startsWith('/register')) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/'
+    return NextResponse.redirect(url)
+  }
+
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
+  }
+
+  // Role-based protection for dashboard routes
+  if (user && request.nextUrl.pathname.startsWith('/dashboard')) {
+    const { data: clinicUser } = await supabase
+      .from('clinic_users')
+      .select('role')
+      .eq('user_id', user.id)
+      .single()
+    
+    const userRole = clinicUser?.role
+    const path = request.nextUrl.pathname
+
+    if (userRole === 'admin') {
+      // Admin: Block Inbox and Agenda (Operational screens)
+      if (path.startsWith('/dashboard/inbox') || path.startsWith('/dashboard/agenda')) {
+        const url = request.nextUrl.clone()
+        url.pathname = '/dashboard'
+        return NextResponse.redirect(url)
+      }
+    } else {
+      // Attendant: Block Config, Profissionais, and Management Dashboard
+      const isManagementPath = path.startsWith('/dashboard/config') || 
+                               path.startsWith('/dashboard/profissionais') ||
+                               path === '/dashboard'
+      
+      if (isManagementPath) {
+        const url = request.nextUrl.clone()
+        url.pathname = '/dashboard/inbox'
+        return NextResponse.redirect(url)
+      }
+    }
   }
 
   return supabaseResponse

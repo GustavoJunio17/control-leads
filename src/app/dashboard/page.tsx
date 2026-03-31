@@ -1,7 +1,8 @@
 import { Users, UserCheck, CalendarPlus, Activity, Bot } from "lucide-react"
-import { createClient } from "@/lib/supabase/server"
+import { createClient, getUserRole } from "@/lib/supabase/server"
 import { createClient as createAdminClient } from "@supabase/supabase-js"
 import Link from "next/link"
+import { redirect } from "next/navigation"
 
 const supabaseAdmin = createAdminClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -23,6 +24,12 @@ async function getClinicId() {
 }
 
 export default async function DashboardPage() {
+  const role = await getUserRole()
+  
+  if (role !== 'admin') {
+    redirect('/dashboard/inbox')
+  }
+
   const clinicId = await getClinicId()
 
   if (!clinicId) {

@@ -54,10 +54,7 @@ export default function LoginPage() {
           </form>
         </div>
         <p className="px-8 text-center text-sm text-slate-500">
-          Não tem uma conta?{' '}
-          <Link href="/register" className="underline underline-offset-4 hover:text-blue-600">
-            Cadastre sua clínica
-          </Link>
+          Entre em contato com nosso suporte para adquirir sua licença.
         </p>
       </div>
     </div>
