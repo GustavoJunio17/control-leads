@@ -61,7 +61,7 @@ export function PatientTable({ patients }: PatientTableProps) {
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-6" onClick={() => setSelectedPatient(p)} className="cursor-pointer">
+                  <td className="px-6 py-6 cursor-pointer" onClick={() => setSelectedPatient(p)}>
                     <div className="flex flex-col gap-1">
                       <div className="flex items-center gap-2 text-slate-700 font-bold text-sm">
                          <Phone className="w-3.5 h-3.5 text-blue-500" />
