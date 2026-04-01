@@ -20,14 +20,9 @@ async function getClinicId() {
   return clinicUser?.clinic_id ?? null
 }
 
-export async function fetchAgendaData(dateStr: string) {
+export async function fetchAgendaData(start: string, end: string) {
   const clinicId = await getClinicId()
   if (!clinicId) return { appointments: [], professionals: [] }
-
-  const start = new Date(dateStr)
-  start.setHours(0, 0, 0, 0)
-  const end = new Date(dateStr)
-  end.setHours(23, 59, 59, 999)
 
   const [{ data: appointments }, { data: professionals }] = await Promise.all([
     supabaseAdmin
@@ -39,8 +34,8 @@ export async function fetchAgendaData(dateStr: string) {
         procedures ( name )
       `)
       .eq('clinic_id', clinicId)
-      .gte('start_time', start.toISOString())
-      .lte('start_time', end.toISOString())
+      .gte('start_time', start)
+      .lte('start_time', end)
       .order('start_time'),
 
     supabaseAdmin
@@ -52,6 +47,49 @@ export async function fetchAgendaData(dateStr: string) {
   ])
 
   return { appointments: appointments ?? [], professionals: professionals ?? [] }
+}
+
+export async function fetchInitialData() {
+  const clinicId = await getClinicId()
+  if (!clinicId) return { professionals: [], procedures: [], leads: [] }
+
+  const [{ data: professionals }, { data: procedures }, { data: leads }] = await Promise.all([
+    supabaseAdmin.from('professionals').select('id, name').eq('clinic_id', clinicId).eq('is_active', true),
+    supabaseAdmin.from('procedures').select('id, name, duration_minutes').eq('clinic_id', clinicId),
+    supabaseAdmin.from('leads').select('id, name, phone').eq('clinic_id', clinicId)
+  ])
+
+  return { professionals: professionals ?? [], procedures: procedures ?? [], leads: leads ?? [] }
+}
+
+export async function createAppointment(data: any) {
+  const clinicId = await getClinicId()
+  if (!clinicId) throw new Error("Clinic not found")
+
+  const { error } = await supabaseAdmin.from('appointments').insert([{
+    clinic_id: clinicId,
+    lead_id: data.lead_id,
+    professional_id: data.professional_id,
+    procedure_id: data.procedure_id,
+    start_time: data.start_time,
+    end_time: data.end_time,
+    status: 'pending'
+  }])
+
+  if (error) throw new Error(error.message)
+  return { success: true }
+}
+
+export async function updateAppointmentStatus(id: string, status: string) {
+  const { error } = await supabaseAdmin.from('appointments').update({ status }).eq('id', id)
+  if (error) throw new Error(error.message)
+  return { success: true }
+}
+
+export async function deleteAppointment(id: string) {
+  const { error } = await supabaseAdmin.from('appointments').delete().eq('id', id)
+  if (error) throw new Error(error.message)
+  return { success: true }
 }
 
 export async function fetchMonthAppointmentDays(year: number, month: number) {

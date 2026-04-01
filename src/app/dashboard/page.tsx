@@ -26,6 +26,10 @@ async function getClinicId() {
 export default async function DashboardPage() {
   const role = await getUserRole()
   
+  if (role === 'super_admin') {
+    redirect('/dashboard/saas/clinics')
+  }
+
   if (role !== 'admin') {
     redirect('/dashboard/inbox')
   }

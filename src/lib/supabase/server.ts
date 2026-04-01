@@ -39,13 +39,27 @@ export async function getUserRole() {
   const user = await getUser()
   if (!user) return null
 
-  const supabase = await createClient()
-  const { data, error } = await supabase
+  // Use admin client to bypass RLS for role check
+  const supabaseAdmin = createSupabaseAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+
+  const { data, error } = await supabaseAdmin
     .from('clinic_users')
     .select('role')
     .eq('user_id', user.id)
-    .single()
 
-  if (error || !data) return null
-  return data.role
+  if (error || !data || data.length === 0) return null
+  
+  const roles = (data as any[]).map(r => r.role)
+  if (roles.includes('super_admin')) return 'super_admin'
+  if (roles.includes('admin')) return 'admin'
+  return roles[0]
+}
+
+// Internal admin client creator
+function createSupabaseAdminClient(url: string, key: string) {
+  const { createClient: createBaseClient } = require('@supabase/supabase-js')
+  return createBaseClient(url, key)
 }

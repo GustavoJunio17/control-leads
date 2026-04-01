@@ -24,7 +24,7 @@ export async function fetchConversations() {
     .eq('user_id', user.id)
     .single()
 
-  if (!clinicUser) return []
+  if (!clinicUser || !clinicUser.clinic_id) return []
 
   // Buscar conversas com os dados do lead e a última mensagem
   const { data: conversations, error } = await supabaseAdmin
@@ -32,8 +32,16 @@ export async function fetchConversations() {
     .select(`
       *,
       leads (
+        id,
         name,
-        phone
+        phone,
+        email,
+        cpf,
+        birth_date,
+        address,
+        city,
+        state,
+        cep
       ),
       messages (
         content,
@@ -176,4 +184,23 @@ export async function toggleAiStatus(conversationId: string, newStatus: 'bot_han
 
   revalidatePath('/dashboard/inbox')
   return { success: true }
+}
+
+export async function fetchLeadById(leadId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
+
+  const { data: lead, error } = await supabaseAdmin
+    .from('leads')
+    .select('*')
+    .eq('id', leadId)
+    .single()
+
+  if (error) {
+    console.error('Error fetching lead:', error)
+    return null
+  }
+
+  return lead
 }

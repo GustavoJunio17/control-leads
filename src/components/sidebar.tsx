@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Users, Calendar, MessageSquareText, Settings, UserSquare2, User, LogOut } from 'lucide-react'
+import { LayoutDashboard, Users, Calendar, MessageSquareText, Settings, UserSquare2, User, LogOut, Building, CreditCard } from 'lucide-react'
 import { logout } from '@/app/login/actions'
 
 interface SidebarProps {
@@ -20,9 +20,11 @@ const navItems = [
 
 export function Sidebar({ role }: SidebarProps) {
   const pathname = usePathname()
+  const isSuperAdmin = role === 'super_admin'
   const isAdmin = role === 'admin'
 
   const filteredNavItems = navItems.filter(item => {
+    if (isSuperAdmin) return false // Super Admin does NOT see clinic items
     if (item.adminOnly && !isAdmin) return false
     if (item.attendantOnly && isAdmin) return false
     return true
@@ -58,6 +60,48 @@ export function Sidebar({ role }: SidebarProps) {
             )
           })}
           
+          {role === 'super_admin' && (
+            <>
+              <div className="my-4 border-b border-slate-200"></div>
+              <div className="px-3 mb-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                SaaS Admin
+              </div>
+              <Link
+                href="/dashboard/saas/clinics"
+                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all ${
+                  pathname === '/dashboard/saas/clinics'
+                    ? 'bg-blue-100 text-blue-900 font-bold'
+                    : 'text-slate-600 font-medium hover:bg-slate-200 hover:text-slate-900'
+                }`}
+              >
+                <Building className="h-5 w-5" />
+                Empresas
+              </Link>
+              <Link
+                href="/dashboard/saas/users"
+                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all ${
+                  pathname === '/dashboard/saas/users'
+                    ? 'bg-blue-100 text-blue-900 font-bold'
+                    : 'text-slate-600 font-medium hover:bg-slate-200 hover:text-slate-900'
+                }`}
+              >
+                <Users className="h-5 w-5" />
+                Usuários Globais
+              </Link>
+              <Link
+                href="/dashboard/saas/plans"
+                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all ${
+                  pathname === '/dashboard/saas/plans'
+                    ? 'bg-blue-100 text-blue-900 font-bold'
+                    : 'text-slate-600 font-medium hover:bg-slate-200 hover:text-slate-900'
+                }`}
+              >
+                <CreditCard className="h-5 w-5" />
+                Planos SaaS
+              </Link>
+            </>
+          )}
+
           {isAdmin && (
             <>
               <div className="my-4 border-b border-slate-200"></div>

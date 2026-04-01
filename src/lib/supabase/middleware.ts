@@ -51,14 +51,39 @@ export async function updateSession(request: NextRequest) {
 
   // Role-based protection for dashboard routes
   if (user && request.nextUrl.pathname.startsWith('/dashboard')) {
-    const { data: clinicUser } = await supabase
+    const supabaseAdmin = require('@supabase/supabase-js').createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+
+    const { data: clinicUsers } = await supabaseAdmin
       .from('clinic_users')
       .select('role')
       .eq('user_id', user.id)
-      .single()
     
-    const userRole = clinicUser?.role
+    // Pick the most powerful role
+    const roles = (clinicUsers as any[])?.map(cu => cu.role) || []
+    const userRole = roles.includes('super_admin') ? 'super_admin' : (roles.includes('admin') ? 'admin' : roles[0])
     const path = request.nextUrl.pathname
+
+    if (userRole === 'super_admin') {
+      // Super Admin: Only allow SaaS management routes. Block clinic-specific pages.
+      const isSaaSPath = path.startsWith('/dashboard/saas')
+      
+      if (!isSaaSPath) {
+        const url = request.nextUrl.clone()
+        url.pathname = '/dashboard/saas/clinics'
+        return NextResponse.redirect(url)
+      }
+      return supabaseResponse
+    }
+
+    // Block SaaS management for non-super admins
+    if (path.startsWith('/dashboard/saas') && userRole !== 'super_admin') {
+      const url = request.nextUrl.clone()
+      url.pathname = '/dashboard'
+      return NextResponse.redirect(url)
+    }
 
     if (userRole === 'admin') {
       // Admin: Block Inbox and Agenda (Operational screens)
